@@ -1,0 +1,6 @@
+node_modules/
+dist/
+release/
+.bin/
+android/app/build/
+electron/secrets.cjs

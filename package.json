@@ -1,0 +1,45 @@
+{
+  "name": "galaxy-fm",
+  "version": "2.0.0",
+  "description": "Galaxy.FM music player",
+  "author": "Funroe",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "pc": "vite build && electron .",
+    "pc:exe": "vite build && electron-builder --win portable",
+    "android:sync": "vite build && npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "@capacitor/ios": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "electron": "^31.7.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.10"
+  },
+  "build": {
+    "appId": "com.galaxyfm.app",
+    "productName": "Galaxy.FM",
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "win": {
+      "icon": "public/icon-512.png"
+    },
+    "directories": {
+      "output": "release"
+    }
+  }
+}
