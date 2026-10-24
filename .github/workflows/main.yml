@@ -1,0 +1,59 @@
+name: Build iPhone app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  ios:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm install --no-audit --no-fund
+
+      - name: Build web files
+        run: npx vite build
+
+      - name: Create iOS project
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: App icon, background audio, local network
+        run: |
+          ICONDIR=ios/App/App/Assets.xcassets/AppIcon.appiconset
+          for f in "$ICONDIR"/*.png; do cp ios-extra/AppIcon-1024.png "$f"; done
+          PL=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string audio" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" $PL || true
+          /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Galaxy.FM connects to the Galaxy.FM PC app to download songs.'" $PL || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Galaxy.FM" $PL || true
+
+      - name: Build app (unsigned - Sideloadly signs it)
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath build/App.xcarchive archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
+      - name: Package .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/App.xcarchive/Products/Applications/App.app Payload/
+          zip -qry GalaxyFM.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GalaxyFM-ipa
+          path: GalaxyFM.ipa
